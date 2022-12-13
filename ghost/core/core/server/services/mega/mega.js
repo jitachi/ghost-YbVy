@@ -15,7 +15,6 @@ const db = require('../../data/db');
 const models = require('../../models');
 const postEmailSerializer = require('./post-email-serializer');
 const {getSegmentsFromHtml} = require('./segment-parser');
-const emailSuppressionList = require('../email-suppression-list');
 const labs = require('../../../shared/labs');
 
 // Used to listen to email.added and email.edited model events originally, I think to offload this - ideally would just use jobs now if possible
@@ -238,6 +237,8 @@ const addEmail = async (postModel, options) => {
             from: emailData.from,
             reply_to: emailData.replyTo,
             html: emailData.html,
+            source: emailData.html,
+            source_type: 'html',
             plaintext: emailData.plaintext,
             submitted_at: moment().toDate(),
             track_opens: !!settingsCache.get('email_track_opens'),
@@ -561,13 +562,8 @@ async function createEmailBatches({emailModel, memberRows, memberSegment, option
 
     debug('createEmailBatches: storing recipient list');
     const startOfRecipientStorage = Date.now();
-    const emails = memberRows.map(row => row.email);
-    const emailSuppressionData = await emailSuppressionList.getBulkSuppressionData(emails);
-    const emailSuppressedLookup = _.zipObject(emails, emailSuppressionData);
-    const filteredRows = memberRows.filter((row) => {
-        return emailSuppressedLookup[row.email].suppressed === false;
-    });
-    const batches = _.chunk(filteredRows, bulkEmailService.BATCH_SIZE);
+    let rowsToBatch = memberRows;
+    const batches = _.chunk(rowsToBatch, bulkEmailService.BATCH_SIZE);
     const batchIds = await Promise.mapSeries(batches, storeRecipientBatch);
     debug(`createEmailBatches: stored recipient list (${Date.now() - startOfRecipientStorage}ms)`);
     logging.info(`[createEmailBatches] stored recipient list (${Date.now() - startOfRecipientStorage}ms)`);

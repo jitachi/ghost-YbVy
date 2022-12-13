@@ -497,6 +497,10 @@ export function hasMultipleNewsletters({site}) {
     return newsletters?.length > 1;
 }
 
+export function isEmailSuppressed({member}) {
+    return member?.email_suppression?.suppressed;
+}
+
 export function hasOnlyFreeProduct({site}) {
     const products = getSiteProducts({site});
     return (products.length === 1 && hasFreeProductPrice({site}));
@@ -653,6 +657,13 @@ export const getMemberEmail = ({member}) => {
     return member.email;
 };
 
+export const hasMemberGotEmailSuppression = ({member}) => {
+    if (!member) {
+        return '';
+    }
+    return member.email_suppression;
+};
+
 export const getFirstpromoterId = ({site}) => {
     return (site && site.firstpromoter_account);
 };
@@ -679,6 +690,14 @@ export const getSupportAddress = ({site}) => {
         return `${recipient}@${updatedDomain}`;
     }
     return supportAddress || '';
+};
+
+export const getDefaultNewsletterSender = ({site}) => {
+    const newsletters = getSiteNewsletters({site});
+    const defaultNewsletter = newsletters?.[0];
+    if (defaultNewsletter) {
+        return defaultNewsletter.sender_email || `noreply@${getSiteDomain({site})}`;
+    }
 };
 
 export const getSiteDomain = ({site}) => {

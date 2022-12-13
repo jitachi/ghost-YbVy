@@ -3,7 +3,7 @@ import CloseButton from '../common/CloseButton';
 import BackButton from '../common/BackButton';
 import {useContext, useState} from 'react';
 import Switch from '../common/Switch';
-import {getSiteNewsletters} from '../../utils/helpers';
+import {getSiteNewsletters, hasMemberGotEmailSuppression} from '../../utils/helpers';
 import ActionButton from '../common/ActionButton';
 import {ReactComponent as CheckmarkIcon} from '../../images/icons/check-circle.svg';
 
@@ -48,7 +48,7 @@ function NewsletterPrefSection({newsletter, subscribedNewsletters, setSubscribed
     const [showUpdated, setShowUpdated] = useState(false);
     const [timeoutId, setTimeoutId] = useState(null);
     return (
-        <section className='gh-portal-list-toggle-wrapper'>
+        <section className='gh-portal-list-toggle-wrapper' data-test-toggle-wrapper>
             <div className='gh-portal-list-detail'>
                 <h3>{newsletter.name}</h3>
                 <p>{newsletter?.description}</p>
@@ -96,7 +96,7 @@ function CommentsSection({updateCommentNotifications, isCommentsEnabled, enableC
     }
 
     return (
-        <section className='gh-portal-list-toggle-wrapper'>
+        <section className='gh-portal-list-toggle-wrapper' data-test-toggle-wrapper>
             <div className='gh-portal-list-detail'>
                 <h3>Comments</h3>
                 <p>Get notified when someone replies to your comment</p>
@@ -151,7 +151,7 @@ export default function NewsletterManagement({
     isCommentsEnabled,
     enableCommentNotifications
 }) {
-    const {brandColor, site} = useContext(AppContext);
+    const {brandColor, onAction, member, site} = useContext(AppContext);
     const isDisabled = !subscribedNewsletters?.length && ((isCommentsEnabled && !enableCommentNotifications) || !isCommentsEnabled);
     const EmptyNotification = () => {
         return null;
@@ -162,7 +162,7 @@ export default function NewsletterManagement({
             <CloseButton />
             <AccountHeader />
             <FinalNotification />
-            <div className='gh-portal-section'>
+            <div className='gh-portal-section flex'>
                 <div className='gh-portal-list'>
                     <NewsletterPrefs
                         subscribedNewsletters={subscribedNewsletters}
@@ -175,14 +175,14 @@ export default function NewsletterManagement({
                             updateSubscribedNewsletters(newsletters);
                         }}
                     />
-                    <CommentsSection 
+                    <CommentsSection
                         isCommentsEnabled={isCommentsEnabled}
                         enableCommentNotifications={enableCommentNotifications}
                         updateCommentNotifications={updateCommentNotifications}
                     />
                 </div>
             </div>
-            <footer className='gh-portal-action-footer'>
+            <footer className={'gh-portal-action-footer' + (hasMemberGotEmailSuppression({member}) ? ' gh-feature-suppressions' : '')}>
                 <div style={{width: '100%'}}>
                     <ActionButton
                         isRunning={false}
@@ -195,9 +195,21 @@ export default function NewsletterManagement({
                         label='Unsubscribe from all emails'
                         isDestructive={true}
                         style={{width: '100%'}}
+                        dataTestId="unsubscribe-from-all-emails"
                     />
                     <ShowPaidMemberMessage isPaid={isPaidMember} site={site} />
                 </div>
+                {hasMemberGotEmailSuppression({member}) && !isDisabled &&
+                    <div className="gh-portal-footer-secondary">
+                        <span className="gh-portal-footer-secondary-light">Not receiving emails?</span>
+                        <button
+                            className="gh-portal-btn-text gh-email-faq-page-button"
+                            onClick={() => onAction('switchPage', {page: 'emailReceivingFAQ'})}
+                        >
+                            Learn more &rarr;
+                        </button>
+                    </div>
+                }
             </footer>
         </div>
     );

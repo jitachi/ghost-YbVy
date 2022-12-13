@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const logging = require('@tryghost/logging');
 const membersService = require('./service');
+const emailSuppressionList = require('../email-suppression-list');
 const models = require('../../models');
 const urlUtils = require('../../../shared/url-utils');
 const spamPrevention = require('../../web/shared/middleware/api/spam-prevention');
@@ -39,7 +40,7 @@ const authMemberByUuid = async function (req, res, next) {
                 // Already authenticated via session
                 return next();
             }
-            
+
             throw new errors.UnauthorizedError({
                 messsage: tpl(messages.missingUuid)
             });
@@ -76,7 +77,10 @@ const deleteSession = async function (req, res) {
         res.writeHead(204);
         res.end();
     } catch (err) {
-        res.writeHead(err.statusCode, {
+        if (!err.statusCode) {
+            logging.error(err);
+        }
+        res.writeHead(err.statusCode ?? 500, {
             'Content-Type': 'text/plain;charset=UTF-8'
         });
         res.end(err.message);
@@ -94,6 +98,29 @@ const getMemberData = async function (req, res) {
     } catch (err) {
         res.writeHead(204);
         res.end();
+    }
+};
+
+const deleteSuppression = async function (req, res) {
+    try {
+        const member = await membersService.ssr.getMemberDataFromSession(req, res);
+        const options = {
+            id: member.id,
+            withRelated: ['newsletters']
+        };
+        await emailSuppressionList.removeEmail(member.email);
+        await membersService.api.members.update({subscribed: true}, options);
+
+        res.writeHead(204);
+        res.end();
+    } catch (err) {
+        if (!err.statusCode) {
+            logging.error(err);
+        }
+        res.writeHead(err.statusCode ?? 500, {
+            'Content-Type': 'text/plain;charset=UTF-8'
+        });
+        res.end(err.message);
     }
 };
 
@@ -165,14 +192,18 @@ const updateMemberData = async function (req, res) {
                 id: member.id,
                 withRelated: ['stripeSubscriptions', 'stripeSubscriptions.customer', 'stripeSubscriptions.stripePrice', 'newsletters']
             };
-            const updatedMember = await membersService.api.members.update(data, options);
+            await membersService.api.members.update(data, options);
+            const updatedMember = await membersService.ssr.getMemberDataFromSession(req, res);
 
-            res.json(formattedMemberResponse(updatedMember.toJSON()));
+            res.json(formattedMemberResponse(updatedMember));
         } else {
             res.json(null);
         }
     } catch (err) {
-        res.writeHead(err.statusCode, {
+        if (!err.statusCode) {
+            logging.error(err);
+        }
+        res.writeHead(err.statusCode ?? 500, {
             'Content-Type': 'text/plain;charset=UTF-8'
         });
         res.end(err.message);
@@ -262,5 +293,6 @@ module.exports = {
     getMemberData,
     updateMemberData,
     updateMemberNewsletters,
-    deleteSession
+    deleteSession,
+    deleteSuppression
 };

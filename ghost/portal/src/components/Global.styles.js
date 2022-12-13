@@ -20,6 +20,7 @@ export const GlobalStyles = `
         --grey14: #fbfbfb;
         --white: #fff;
         --red: #f02525;
+        --darkerRed: #C50202;
         --yellow: #FFDC15;
         --green: #7FC724;
     }
@@ -77,6 +78,18 @@ export const GlobalStyles = `
         letter-spacing: -0.019em;
     }
 
+    h4 {
+        font-size: 19px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+
+    h5 {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+
     p {
         font-size: 15px;
         line-height: 1.5em;
@@ -105,6 +118,64 @@ export const GlobalStyles = `
     textarea {
         padding: 10px;
         line-height: 1.5em;
+    }
+
+    .gh-longform {
+        padding: 56px 6vmin 6vmin;
+    }
+
+    .gh-longform p {
+        color: var(--grey3);
+        margin-bottom: 1.2em;
+    }
+
+    .gh-longform p:last-of-type {
+        margin-bottom: 0.2em;
+    }
+
+    .gh-longform h3 {
+        font-size: 27px;
+        margin-top: 0px;
+        margin-bottom: 0.25em;
+    }
+
+    .gh-longform h4 {
+        font-size: 17.5px;
+        margin-top: 1.85em;
+        margin-bottom: 0.4em;
+    }
+
+    .gh-longform h5 {
+        margin-top: 0.8em;
+        margin-bottom: 0.2em;
+    }
+
+    .gh-longform a {
+        color: var(--brandcolor);
+        font-weight: 500;
+    }
+
+    .gh-longform strong {
+        color: var(--grey1);
+    }
+
+    .gh-longform .ul {
+        text-decoration: underline;
+    }
+
+    .gh-longform .gh-portal-btn {
+        width: calc(100% + 4vmin);
+        margin-top: 4rem;
+        margin-right: -4vmin;
+    }
+
+    .gh-longform .gh-portal-btn-text {
+        color: var(--brandcolor);
+        cursor: pointer;
+        background: none;
+        transition: color linear 100ms;
+        font-size: 1.45rem;
+        text-decoration: underline;
     }
 
     @media (max-width: 1440px) {
@@ -138,6 +209,14 @@ export const GlobalStyles = `
         h3 {
             font-size: 24px;
             letter-spacing: -0.019em;
+        }
+
+        .gh-longform {
+            padding: 10vmin 28px;
+        }
+
+        .gh-mobile-shortener {
+            display: none;
         }
     }
 `;

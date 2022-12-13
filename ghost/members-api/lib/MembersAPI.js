@@ -16,6 +16,9 @@ const RouterController = require('./controllers/router');
 const MemberController = require('./controllers/member');
 const WellKnownController = require('./controllers/well-known');
 
+const {EmailSuppressedEvent} = require('@tryghost/email-suppression-list');
+const DomainEvents = require('@tryghost/domain-events');
+
 module.exports = function MembersAPI({
     tokenConfig: {
         issuer,
@@ -50,6 +53,7 @@ module.exports = function MembersAPI({
         MemberCreatedEvent,
         SubscriptionCreatedEvent,
         MemberLinkClickEvent,
+        EmailSpamComplaintEvent,
         Offer,
         OfferRedemption,
         StripeProduct,
@@ -112,6 +116,7 @@ module.exports = function MembersAPI({
         SubscriptionCreatedEvent,
         MemberLinkClickEvent,
         MemberFeedback,
+        EmailSpamComplaintEvent,
         Comment,
         labsService,
         memberAttributionService
@@ -344,6 +349,17 @@ module.exports = function MembersAPI({
     const bus = new (require('events').EventEmitter)();
 
     bus.emit('ready');
+
+    DomainEvents.subscribe(EmailSuppressedEvent, async function (event) {
+        if (!labsService.isSet('suppressionList')) {
+            return;
+        }
+        const member = await memberRepository.get({email: event.data.emailAddress});
+        if (!member) {
+            return;
+        }
+        await memberRepository.update({newsletters: []}, {id: member.id});
+    });
 
     return {
         middleware,

@@ -1,32 +1,15 @@
-const {AbstractEmailSuppressionList, EmailSuppressionData} = require('@tryghost/email-suppression-list');
+const MailgunClient = require('@tryghost/mailgun-client');
+const models = require('../../models');
+const configService = require('../../../shared/config');
+const settingsCache = require('../../../shared/settings-cache');
+const MailgunEmailSuppressionList = require('./MailgunEmailSuppressionList');
 
-class InMemoryEmailSuppressionList extends AbstractEmailSuppressionList {
-    async removeEmail(email) {
-        if (email === 'fail@member.test') {
-            return false;
-        }
-        return true;
-    }
+const mailgunClient = new MailgunClient({
+    config: configService,
+    settings: settingsCache
+});
 
-    async getSuppressionData(email) {
-        if (email === 'spam@member.test') {
-            return new EmailSuppressionData(true, {
-                timestamp: new Date(),
-                reason: 'spam'
-            });
-        }
-        if (email === 'fail@member.test') {
-            return new EmailSuppressionData(true, {
-                timestamp: new Date(),
-                reason: 'fail'
-            });
-        }
-        return new EmailSuppressionData(false);
-    }
-
-    async init() {
-        return;
-    }
-}
-
-module.exports = new InMemoryEmailSuppressionList();
+module.exports = new MailgunEmailSuppressionList({
+    Suppression: models.Suppression,
+    apiClient: mailgunClient
+});
